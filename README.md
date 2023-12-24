@@ -7,13 +7,7 @@
 To find if to points intersect
 The equations of the lines are
 
-p3   p2
-\  / 
-\/
-/\
-/  \
-/    \
-p1    p4
+<img src="lineline.jpg"  />
 
 Pa = P1 + ua ( P2 - P1 )
 Pb = P3 + ub ( P4 - P3 )
