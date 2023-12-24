@@ -40,14 +40,14 @@ x1 + ua (x2 - x1) = x3 + ub (x4 - x3)
 y1 + ua (y2 - y1) = y3 + ub (y4 - y3)
 
 
-ua = (x4-x3)(y1-y3) - (y4-y3)(x1-x3)
-     -------------------------------
-      (y4-y3)(x2-x1) - (x4-x3)(y2-y1)
+ua = (x4-x3)(y1-y3) - (y4-y3)(x1-x3) <br />
+&emsp; ------------------------------- <br />
+&emsp; (y4-y3)(x2-x1) - (x4-x3)(y2-y1)
 
 
-ub = (x2-x1)(y1-y3) - (y2-y1)(x1-x3)
-     -------------------------------
-      (y4-y3)(x2-x1) - (x4-x3)(y2-y1)
+ub = (x2-x1)(y1-y3) - (y2-y1)(x1-x3) <br />
+&emsp; ------------------------------- <br />
+&emsp; (y4-y3)(x2-x1) - (x4-x3)(y2-y1)
 
 Substituting either of these into the corresponding equation for the line gives the intersection point. For example the intersection point (x,y) is
 
