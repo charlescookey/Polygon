@@ -7,13 +7,7 @@
 To find if to points intersect
 The equations of the lines are
 
-p3   p2
- \  / 
-  \/
-  /\
- /  \
-/    \
-p1    p4
+<img src="lineline.jpg"  />
 
 Pa = P1 + ua ( P2 - P1 )
 Pb = P3 + ub ( P4 - P3 )
@@ -44,7 +38,7 @@ To check if a point is inside the polygon
 
 Consider a polygon made up of N vertices (xi,yi) where i ranges from 0 to N-1. The last vertex (xN,yN) is assumed to be the same as the first vertex (x0,y0), that is, the polygon is closed. To determine the status of a point (xp,yp) consider a horizontal ray emanating from (xp,yp) and to the right. If the number of times this ray intersects the line segments making up the polygon is even then the point is outside the polygon. Whereas if the number of intersections is odd then the point (xp,yp) lies inside the polygon. The following shows the ray for some sample points and should make the technique clear.
 
-<img src="insidepoly.png"  />
+<img src="insidepoly.jpg"  />
 
 Note: for the purposes of this discussion 0 will be considered even, the test for even or odd will be based on modulus 2, that is, if the number of intersections modulus 2 is 0 then the number is even, if it is 1 then it is odd.
 
