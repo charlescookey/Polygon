@@ -1,174 +1,372 @@
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+//#include "matplotlibcpp.h"
 #include <iostream>
+#include <vector>
 #include <string>
-using namespace std;
-using namespace cv;
+#include <fstream>
+#include <cmath>
+#include <algorithm>
+constexpr double M_PI = 3.14159265358979323846;
 
-String NoteString[] = {"?","C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
-void morphologicalyOpeningAndClosing(Mat);
-void drawRectangleOverTheContours(vector<vector<Point>>,Rect,Mat);
-int getOctaveNumber(int);
-int getNote(int ,int);
-void putNoteOverTheImage(vector<vector<Point>>,Rect,Mat,Point);
+using std::vector;
+using std::string;
+using std::cout;
 
-int main(int argc , char**argv){
 
-    cv::VideoCapture cap;
-    cap.open("adele.mp4");
+//A structure to contain Points for  x and y
+struct Point {
+    double x, y;
 
-    if(!cap.isOpened()){
-        cout<<"image not found"<<endl;
-        waitKey(0);
+    //Default constructor
+    Point() {
+        x = 0;
+        y = 0;
+    }
+    //Constructor
+    Point(double _x, double _y) : x(_x), y(_y) {};
+
+    //operator to check if two points are same
+    bool operator==(Point const& b) {
+        return x == b.x && y == b.y;
+    }
+    //to print points
+    void print() {
+        cout << x << " " << y << "\n";
+    }
+};
+
+//Check if two points intersect
+bool intersect(Point p1, Point p2, Point p3, Point p4 , Point &intersect) {
+
+    // Check if none of the lines are of length 0
+    //if ((p1.x == p2.x && p1.y == p2.y) || (p3.x == p4.x && p3.y == p4.y)) {
+    if ((p1 == p2) || (p3 == p4)) {
+        return false;
+    }
+
+    double denominator = ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+
+        // Lines are parallel
+    if (denominator == 0) {
+        return false;
+    }
+
+    double ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denominator;
+    double ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denominator;
+
+        // is the intersection along the segments
+    if (ua < 0 || ua > 1 || ub < 0 || ub > 1) {
+        return false;
+    }
+
+    // Return a object with the x and y coordinates of the intersection
+    intersect.x = p1.x + ua * (p2.x - p1.x);
+    intersect.y = p1.y + ua * (p2.y - p1.y);
+
+    return true;
+}
+
+double angle(const Point& a, const Point& center) {
+    return atan2(a.y - center.y, a.x - center.x) * 180 / M_PI;
+}
+
+// Define a simple structure to represent a polygon as a collection of points
+class Polygon {
+
+public:
+    Polygon() {
+        vertices.clear();
+    }
+    vector<Point> vertices;
+
+    void add(Point a) {
+        vertices.push_back(a);
+    }
+
+    int remove(Point a) {
+        for (std::vector<Point>::iterator it = vertices.begin(); it != vertices.end();)
+        {
+            if (*it == a) {
+                vertices.erase(it);
+                return 0;
+            }
+        }
         return -1;
     }
-    /*
-    namedWindow("Control",WINDOW_NORMAL);
-    int highH =179,lowH =0;
-    int highS =255,lowS =0;
-    int highV =255,lowV =0;
 
-    createTrackbar("Low H", "Control",&lowH, 179);
-    createTrackbar("High H","Control",&highH,179);
-    createTrackbar("Low S", "Control",&lowS, 255);
-    createTrackbar("High S","Control",&highS,255);
-    createTrackbar("Low V", "Control",&lowV, 255);
-    createTrackbar("High V","Control",&highV,255);
-    */
-    int BhighH =111,BlowH =95;
-    int BhighS =255,BlowS =76;
-    int BhighV =257,BlowV =44;
-
-    int OhighH =39,OlowH =3;
-    int OhighS =255,OlowS =63;
-    int OhighV =255,OlowV =70;
+    //void plot() {
+    //    vector<int> xaxis{};
+    //    vector<int> yaxis{};
 
 
-    Mat dst;
-    Mat img;
-    Mat forT;
-    Mat bForT;
-    Mat oForT;
-    Mat newd;
-    vector<vector<Point>> bContours;
-    vector<vector<Point>> oContours;
-    while(true){
-        bool mIsSuccess = cap.read(img);
-        if(mIsSuccess == false){
-            cout<<"end of frames"<<endl;
-            break;
-        }
-        dst = Mat(img.clone(),Rect(29,493,1228,185));
-        cvtColor(dst,forT,COLOR_BGR2HSV);
+    //    for (Point a : vertices) {
+    //        xaxis.push_back(a.x);
+    //        yaxis.push_back(a.y);
+    //    }
 
-        inRange(forT,Scalar(BlowH,BlowS,BlowV),Scalar(BhighH,BhighS,BhighV),bForT);
-        inRange(forT,Scalar(OlowH,OlowS,OlowV),Scalar(OhighH,OhighS,OhighV),oForT);
+    //    plt::plot(xaxis, yaxis);
 
-        morphologicalyOpeningAndClosing(bForT);
-        morphologicalyOpeningAndClosing(oForT);
+    //}
 
-
-        //imshow("sub",dst);
-        //imshow("Blue",bForT);
-        //imshow("Orange",oForT);
-
-        findContours(bForT,bContours,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-        findContours(oForT,oContours,RETR_EXTERNAL,CHAIN_APPROX_SIMPLE);
-
-        newd = img.clone();
-        Rect ee;
-        Point aa = Point(29,150);
-        Point bb = Point(901,150);
-
-        putNoteOverTheImage(oContours,ee,newd,aa);
-        putNoteOverTheImage(bContours,ee,newd,bb);
-
-        //drawRectangleOverTheContours(bContours,ee,newd);
-        //drawRectangleOverTheContours(oContours,ee,newd);
-
-        imshow("Result",newd);
-
-        if(waitKey(30)==27)
-            break;
+    size_t size() const{
+        return vertices.size();
     }
-    waitKey(0);
-    destroyAllWindows();
+
+    bool contains(Point a) {
+        for (Point vertex : vertices) {
+            if (a == vertex)return true;
+        }
+        return false;
+    }
+
+    bool print(string name) {
+        cout << "\nThe vertices contained in " << name<<": \n";
+        for (Point vertex : vertices) {
+            vertex.print();
+        }
+        return false;
+    }
+    Point findCentroid() {
+        int x = 0;
+        int y = 0;
+        for (const Point& vertex : vertices) {
+            x += vertex.x;
+            y += vertex.y;
+        }
+        Point center;
+        center.x = x / this->size();
+        center.y = y / this->size();
+        return center;
+    }
+
+    // Function to sort vertices based on their angle relative to the centroid
+    void sortVertices() {
+        // Get centroid
+        Point center = this->findCentroid();
+        std::vector<Point> sortedPoints = vertices;
+        // Sort based on angle relative to the centroid
+        std::sort(sortedPoints.begin(), sortedPoints.end(), [&](const Point& a, const Point& b) {
+            return angle(a, center) < angle(b, center);
+            });
+        vertices = sortedPoints;
+    }
+    bool isInside(Point p)
+    {
+        size_t size = this->size();
+        int counter = 0;
+        int i;
+        double xinters;
+        Point p1, p2;
+
+        p1 = vertices[0];
+        for (i = 1; i <= size; i++) {
+            p2 = vertices[i % size];
+            if (p.y > std::min(p1.y, p2.y)) {
+                if (p.y <= std::max(p1.y, p2.y)) {
+                    if (p.x <= std::max(p1.x, p2.x)) {
+                        if (p1.y != p2.y) {
+                            xinters = (p.y - p1.y) * (p2.x - p1.x) / (p2.y - p1.y) + p1.x;
+                            if (p1.x == p2.x || p.x <= xinters)
+                                counter++;
+                        }
+                    }
+                }
+            }
+            
+            p1 = p2;
+        }
+
+        if (counter % 2 == 0)
+            return false;
+        else
+            return true;
+    }
+};
+
+
+Polygon polygonIntersection(const Polygon& polygon1, const Polygon& polygon2) {
+    Polygon result = Polygon();
+
+    // Iterate through all edges of polygon1
+    for (size_t i = 0; i < polygon1.size(); ++i) {
+        size_t next = (i + 1) % polygon1.size();
+        const Point& p1 = polygon1.vertices[i];
+        const Point& p2 = polygon1.vertices[next];
+
+        // Iterate through all edges of polygon2
+        for (size_t j = 0; j < polygon2.size(); ++j) {
+            size_t next2 = (j + 1) % polygon2.size();
+            const Point& p3 = polygon2.vertices[j];
+            const Point& p4 = polygon2.vertices[next2];
+
+            // Check if the edges intersect
+            Point intersection(0, 0);
+            if (intersect(p1, p2, p3, p4, intersection)) {
+
+                if (!result.contains(intersection)) {
+                    result.add(intersection);
+                }
+            }
+        }
+    }
+    return result;
+}
+
+
+void Calculate(Polygon InA , Polygon InB , Polygon &DiffA , Polygon &DiffB , Polygon &Union , Polygon &Intersection) {
+    
+    InA.sortVertices();
+    InA.print("A");
+
+    InB.sortVertices();
+    InB.print("B");
+    
+    Polygon intersectionPoints = polygonIntersection(InA, InB);
+
+
+    for (Point p : InA.vertices) {
+        if (InB.isInside(p)) {
+            Intersection.add(p);
+            DiffB.add(p);
+        }
+        else {
+            DiffA.add(p);
+            Union.add(p);
+        }
+    }
+
+    for (Point p : InB.vertices) {
+        if (InA.isInside(p)) {
+            Intersection.add(p);
+            DiffA.add(p);
+        }
+        else {
+            Union.add(p);
+            DiffB.add(p);
+        }
+    }
+
+    for (Point p : intersectionPoints.vertices) {
+        Intersection.add(p);
+        DiffA.add(p);
+        DiffB.add(p);
+        Union.add(p);
+    }
+
+    DiffA.sortVertices();
+    DiffA.print("Difference A from B");
+    DiffB.sortVertices();
+    DiffB.print("Difference B from A");
+    Union.sortVertices();
+    Union.print("Union of A and B");
+    Intersection.sortVertices();
+    Union.print("Intersection of A and B");
+
+}
+
+
+
+//#include <opencv2/core.hpp>
+//#include <opencv2/imgproc.hpp>
+//#include <opencv2/highgui.hpp>
+//#include <opencv2/highgui/highgui.hpp>
+//#include <iostream>
+//
+//void convertToArayOfArray(Polygon input , vector<vector<cv::Point>> &contour) {
+//    vector<cv::Point> temp;
+//    for (Point p : input.vertices) {
+//        temp.push_back(cv::Point(p.x, p.y));
+//    }
+//    contour.push_back(temp);
+//
+//}
+
+bool isStringDigit(string input) {
+    for (char a : input) {
+        if (!std::isdigit(a))return false;
+    }
+    return true;
+}
+
+vector<string> splitString(string InputString, string delimeter) {
+    size_t delimeterLenght = delimeter.size();
+    size_t start = 0;
+    size_t end = delimeterLenght;
+
+    vector<string> result{};
+
+
+    string temp;
+    while ((end = InputString.find(delimeter , start)) != std::string::npos) {
+        temp = InputString.substr(start, end-start);
+        start = end + delimeterLenght;
+        result.push_back(temp);
+    }
+    temp = InputString.substr(start, end - start);
+    result.push_back(temp);
+    return result;
+}
+
+int main(int argc , char* argv[]) {
+
+    if (argc != 2) {
+        cout << "Wrong argument format. \n ./Polygon.exe filename.txt\n";
+        return -1;
+    }
+
+    Polygon a{};
+    Polygon b{};
+
+    std::fstream inputfile;
+    inputfile.open(argv[1], std::ios::in);
+    bool isA = true;
+    double xPoint = 0;
+    double yPoint = 0;
+
+    if (inputfile.is_open()) {
+        string line;
+        while (std::getline(inputfile, line)) {
+            if (line == "/////")isA = false;
+            vector<string> temp = splitString(line, ",");
+            
+            if (temp.size() == 2) {
+                if (isStringDigit(temp[0]))
+                    xPoint = std::stod(temp[0]);
+                else {
+                    cout << "Points provided in file contain non digits\n";
+                    return -1;
+                }
+                if (isStringDigit(temp[1]))
+                    yPoint = std::stod(temp[1]);
+                else {
+                    cout << "Points provided in file contain non digits\n";
+                    return -1;
+                }
+
+                cout << xPoint << " , " << yPoint << "\n";
+
+
+                if (isA) {
+                    a.add(Point(xPoint, yPoint));
+                }
+                else {
+                    b.add(Point(xPoint, yPoint));
+                }
+
+
+            }
+        }
+    }
+    else {
+        cout << "Unable to find input file. \n";
+        return -1;
+    }
+
+
+
+    Polygon Adifference, Bdifference, _union, intersection;
+
+
+    Calculate(a, b, Adifference, Bdifference ,_union, intersection);
+
     return 0;
 }
-void morphologicalyOpeningAndClosing(Mat imageTo){
-        erode(imageTo,imageTo,getStructuringElement(MORPH_RECT,Size(5,5)));
-        dilate(imageTo,imageTo,getStructuringElement(MORPH_RECT,Size(5,5)));
-        dilate(imageTo,imageTo,getStructuringElement(MORPH_RECT,Size(5,5)));
-        erode(imageTo,imageTo,getStructuringElement(MORPH_RECT,Size(5,5)));
-};
-void drawRectangleOverTheContours(vector<vector<Point>> cont ,Rect rect,Mat theImg){
-        for(int i = 0 ; i<cont.size() ;i ++ ){
-            if(contourArea(cont[i]) > 1000 ){
-                rect = boundingRect(cont[i]);
-                int newx = rect.x + 29;
-                int newy = rect.y + 493;
-                rectangle(theImg,Point(newx , newy) ,Point(newx + rect.width , newy + rect.height),Scalar(0,255,0),3);
-            }
-        }
-};
-
-void putNoteOverTheImage(vector<vector<Point>> cont ,Rect rect,Mat theImg,Point a){
-        for(int i = 0 ; i<cont.size() ;i ++ ){
-            if(contourArea(cont[i]) > 1000 ){
-                rect = boundingRect(cont[i]);
-                int octaveNumber = getOctaveNumber(rect.x);
-                int noteNumber = getNote(rect.x , rect.width);
-                putText(theImg,NoteString[noteNumber] ,Point(a.x,(i > 0 ?(a.y + i*100):a.y)), FONT_HERSHEY_DUPLEX,3,Scalar(0,255,0),4);
-                putText(theImg,to_string(octaveNumber),Point(a.x + 120,(i > 0 ?(a.y + i*100):a.y)),FONT_HERSHEY_DUPLEX,3,Scalar(0,255,0),4);
-
-            }
-        }
-};
-
-int getNote(int x,int z){//z = Rectangle lenght
-    x = ((x-145)%252);
-
-    if(x<15){
-        return 1;
-    }else if(x<50){
-        if(z<25)
-            return 2;
-        return 3;
-    }else if(x<85){
-        if(z<25)
-            return 4;
-        return 5;
-    }else if(x<120){
-        return 6;
-    }else if(x<160){
-        if(z<25)
-        return 7;
-        return 8;
-    }else if(x<195){
-        if(z<25)
-            return 9;
-        return 10;
-    }else if(x<230){
-        if(z<25)
-            return 11;
-        return 12;
-    }else{
-        return 0;
-};
-};
-
-int getOctaveNumber(int y){
-    int x =y;
-        if (x>140 && x <392){
-            return 2;
-        }else if (x>392 && x <644){
-            return 3;
-        }else if (x>644 && x <896){
-            return 4;
-        }else if (x>896 && x <1149){
-            return 5;
-        }else{
-            return 1;
-    };
-};
