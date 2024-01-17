@@ -24,4 +24,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="adele.mp4" />
+  </ItemGroup>
 </Project>
