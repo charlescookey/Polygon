@@ -4,7 +4,7 @@
 
 
 
-To find if to points intersect
+# To find if to points intersect
 The equations of the lines are
 
 <img src="lineline.jpg"  />
@@ -33,7 +33,7 @@ x = x1 + ua (x2 - x1)
 y = y1 + ua (y2 - y1)
 
 
-To check if a point is inside the polygon
+# To check if a point is inside the polygon
 
 
 Consider a polygon made up of N vertices (xi,yi) where i ranges from 0 to N-1. The last vertex (xN,yN) is assumed to be the same as the first vertex (x0,y0), that is, the polygon is closed. To determine the status of a point (xp,yp) consider a horizontal ray emanating from (xp,yp) and to the right. If the number of times this ray intersects the line segments making up the polygon is even then the point is outside the polygon. Whereas if the number of intersections is odd then the point (xp,yp) lies inside the polygon. The following shows the ray for some sample points and should make the technique clear.
